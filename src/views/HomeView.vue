@@ -5,10 +5,34 @@ import AppSelect from '@/components/AppSelect.vue'
 import AppInput from '@/components/AppInput.vue'
 
 const showFilters = ref(false)
+const tab = ref('all')
+const tabs = ['all', 'paid', 'unpaid', 'overdue']
 const filter = reactive({
   userStatus: '',
   paymentStatus: ''
 })
+const paymentStatus = [
+  {
+    value: 'all',
+    label: 'All',
+    status: ''
+  },
+  {
+    value: 'paid',
+    label: 'Paid',
+    status: '#8C62FF'
+  },
+  {
+    value: 'unpaid',
+    label: 'Unpaid',
+    status: '#D4A701',
+  },
+  {
+    value: 'overdue',
+    label: 'Overdue',
+    status: '#FD6A6A'
+  }
+]
 const status = [
   {
     value: 'all',
@@ -29,7 +53,7 @@ const status = [
 </script>
 
 <template>
-  <section class="bg-grey h-screen text-black">
+  <section class="bg-grey text-black">
     <header class="py-[33px] px-[48px] bg-white flex items-center justify-between">
       <h1 class="font-bold text-[24px]">Table Heading</h1>
       <div class="flex gap-[16px]">
@@ -46,10 +70,16 @@ const status = [
     </header>
     <div class="px-[48px] py-[40px] flex justify-between items-center">
       <div role="tablist" class="tabs tabs-bordered">
-        <a role="tab" class="tab pb-10 !px-5 !w-auto">All</a>
-        <a role="tab" class="tab pb-10 !px-5 !w-auto tab-active ![--fallback-bc:#0CAF60]">Paid</a>
-        <a role="tab" class="tab pb-10 !px-5 !w-auto">Unpaid</a>
-        <a role="tab" class="tab pb-10 !px-5 !w-auto">Overdue</a>
+        <a
+          role="tab"
+          class="tab pb-10 !px-5 !w-auto capitalize"
+          :class="{ '![--fallback-bc:#0CAF60]' : tab === item }"
+          @click="tab = item"
+          v-for="(item, index) in tabs"
+          :key="index"
+        >
+          {{ item }}
+        </a>
         <b role="tab" class="tab w-[300px]"></b>
       </div>
       <button class="btn bg-primary text-white px-[20px] py-[8px] w-[254px] hover:bg-primary/75">
@@ -135,7 +165,7 @@ const status = [
               <AppSelect v-model="filter.userStatus" class="w-full" :options="status" />
             </div>
             <div class="w-1/4">
-              <AppSelect v-model="filter.paymentStatus" class="w-full" :options="status" />
+              <AppSelect v-model="filter.paymentStatus" class="w-full" :options="paymentStatus" />
             </div>
           </div>
           <div class="px-[30px] py-5 border-b flex items-center gap-[10px]">
@@ -150,8 +180,6 @@ const status = [
           </div>
         </div>
       </div>
-      {{ filter.userStatus }}
-      {{ showFilters }}
       <div class="px-[30px] py-[24px] border-b"></div>
     </div>
   </section>
