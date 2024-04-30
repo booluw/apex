@@ -10,9 +10,9 @@ const props = defineProps<{
 
 const pages = computed(() => {
   if (props.page < Math.ceil(props.total / props.count)) {
-    return [props.page + 1, props.page + 2]
+    return [props.page + 1]
   } else {
-    return [props.page - 2, props.page - 1]
+    return [props.page - 1]
   }
 })
 </script>
@@ -42,26 +42,25 @@ const pages = computed(() => {
     >
       1
     </button>
-
+    <div class="flex items-end pb-3 text-slate" v-if="page === Math.ceil(total / count)">...</div>
     <button
       v-if="page !== 1 && page !== Math.ceil(total/count)"
       class="btn btn-ghost !w-[50px] !bg-primary/10 text-primary" @click="emit('next', page)"
     >
       {{ page }}
     </button>
-
     <button
-      class="btn btn-ghost !w-[50px] text-slate" @click="emit('next', numb)"
+      class="btn btn-ghost !w-[50px] text-slate hidden md:flex" @click="emit('next', numb)"
       :class="{ '!bg-primary/10 !text-primary': page == numb }"
       v-for="(numb, index) in pages"
       :key="index"
     >
       {{ numb }}
     </button>
-    <div class="flex items-end pb-3 text-slate">...</div>
+    <div class="flex items-end pb-3 text-slate" v-if="page != Math.ceil(total / count)">...</div>
     <button
       class="btn btn-ghost !w-[50px] text-slate" @click="emit('next', Math.ceil(total / count))"
-      :class="{ '!bg-primary/10 !text-primary': page == Math.ceil(total / count) }"
+      :class="{ '!bg-primary/10 !text-primary': page === Math.ceil(total / count) }"
     >
       {{ Math.ceil(total / count) }}
     </button>

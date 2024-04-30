@@ -241,7 +241,7 @@ watch(per_page, async () => {
         </div>
       </div>
     </header>
-    <div class="px-[48px] py-[40px] flex justify-between items-center">
+    <div class="px-[48px] py-[40px] flex flex-col gap-[10px] md:gap-0 md:flex-row justify-between md:items-center">
       <div role="tablist" class="tabs tabs-bordered">
         <a
           role="tab"
@@ -253,7 +253,7 @@ watch(per_page, async () => {
         >
           {{ item }}
         </a>
-        <b role="tab" class="tab w-[300px]"></b>
+        <b role="tab" class="tab w-[300px] hidden md:block"></b>
       </div>
       <button
         class="btn bg-primary text-white px-[20px] py-[8px] w-[254px] hover:bg-primary/75"
@@ -268,7 +268,7 @@ watch(per_page, async () => {
         Pay Dues
       </button>
     </div>
-    <div class="bg-white rounded-[16px] mx-[48px]">
+    <div class="bg-white rounded-[16px] mx-[48px] overflow-auto md:overflow-hidden">
       <div class="px-[30px] py-[24px] border-b flex gap-[16px] justify-end items-center">
         <button
           class="btn bg-grey/50 border-grey rounded-[12px] p-[16px] h-auto flex items-center text-primary hover:bg-white"
@@ -328,17 +328,17 @@ watch(per_page, async () => {
       <div class="">
         <div class="">
           <template v-if="showFilters">
-            <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px]">
-              <div class="flex items-center gap-[20px] w-1/4">
+            <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px] overflow-x-auto">
+              <div class="flex items-center gap-[20px] w-1/4 flex-shrink-0 md:flex-shrink-1">
                 <h3 class="!font-bold !text-black text-[16px] ml-10">Name</h3>
               </div>
-              <div class="w-1/4">
+              <div class="w-1/4 flex-shrink-0 md:flex-shrink-1">
                 <h3 class="!font-bold !text-black text-[16px]">Amount</h3>
               </div>
-              <div class="w-1/4">
+              <div class="w-1/4 flex-shrink-0 md:flex-shrink-1">
                 <h3 class="!font-bold !text-black text-[16px]">User's Status</h3>
               </div>
-              <div class="w-1/4">
+              <div class="w-1/4 flex-shrink-0 md:flex-shrink-1">
                 <h3 class="!font-bold !text-black text-[16px]">Payment Status</h3>
               </div>
             </div>
@@ -358,7 +358,7 @@ watch(per_page, async () => {
               <div class="w-[72px]"></div>
             </div>
           </template>
-          <div class="px-[30px] py-5 border-b flex items-center gap-[16px] text-slate">
+          <div class="px-[30px] py-5 border-b flex items-center gap-[16px] text-slate min-w-[900px] md:w-full">
             <div class="w-1/4">
               <h3 class="ml-10">Name</h3>
             </div>
@@ -373,7 +373,7 @@ watch(per_page, async () => {
             </div>
             <div class="w-[72px]"></div>
           </div>
-          <div class="h-[50vh] overflow-auto overflow-x-hidden">
+          <div class="h-[50vh] overflow-auto md:overflow-x-hidden min-w-[900px] md:w-full">
             <AppLoader v-if="loading" />
             <AppError v-else-if="error" />
             <template v-else>
@@ -522,7 +522,7 @@ watch(per_page, async () => {
           </div>
         </div>
       </div>
-      <div class="px-[30px] py-[24px] flex justify-between items-center">
+      <div class="px-[30px] py-[24px] flex flex-col md:flex-row justify-between items-center">
         <div class="text-slate text-[14px] flex items-center gap-[16px]">
           Show result: <AppSelect v-model="per_page" :options="[6, 10, 20, 50]" />
         </div>
