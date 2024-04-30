@@ -328,17 +328,17 @@ watch(per_page, async () => {
       <div class="">
         <div class="">
           <template v-if="showFilters">
-            <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px] overflow-x-auto">
-              <div class="flex items-center gap-[20px] w-1/4 flex-shrink-0 md:flex-shrink-1">
+            <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px] overflow-x-auto md:overflow-hidden">
+              <div class="flex items-center gap-[20px] w-1/4">
                 <h3 class="!font-bold !text-black text-[16px] ml-10">Name</h3>
               </div>
-              <div class="w-1/4 flex-shrink-0 md:flex-shrink-1">
+              <div class="w-1/4">
                 <h3 class="!font-bold !text-black text-[16px]">Amount</h3>
               </div>
-              <div class="w-1/4 flex-shrink-0 md:flex-shrink-1">
+              <div class="w-1/4">
                 <h3 class="!font-bold !text-black text-[16px]">User's Status</h3>
               </div>
-              <div class="w-1/4 flex-shrink-0 md:flex-shrink-1">
+              <div class="w-1/4">
                 <h3 class="!font-bold !text-black text-[16px]">Payment Status</h3>
               </div>
             </div>
@@ -355,10 +355,9 @@ watch(per_page, async () => {
               <div class="w-1/4">
                 <AppSelect v-model="filter.paymentStatus" class="w-full" :options="paymentStatus" />
               </div>
-              <div class="w-[72px]"></div>
             </div>
           </template>
-          <div class="px-[30px] py-5 border-b flex items-center gap-[16px] text-slate min-w-[900px] md:w-full">
+          <div class="px-[30px] py-5 border-b flex items-center gap-[16px] text-slate">
             <div class="w-1/4">
               <h3 class="ml-10">Name</h3>
             </div>

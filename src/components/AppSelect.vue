@@ -21,7 +21,8 @@ const changeValue = function (val: string) {
       :class="{ '!border-slate/40': showMenu }"
       @click="showMenu = !showMenu"
     >
-      {{ placeholder || value || 'Select an option' }}
+      <span v-if="!value" class="text-slate/75"> {{ placeholder || 'Select an option'}}</span>
+      {{ value }}
       <svg
         width="21"
         height="20"
