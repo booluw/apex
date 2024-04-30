@@ -25,7 +25,7 @@ const paymentStatus = [
   {
     value: 'unpaid',
     label: 'Unpaid',
-    status: '#D4A701',
+    status: '#D4A701'
   },
   {
     value: 'overdue',
@@ -53,8 +53,10 @@ const status = [
 </script>
 
 <template>
-  <section class="bg-grey text-black">
-    <header class="py-[33px] px-[48px] bg-white flex items-center justify-between">
+  <section class="text-black bg-grey min-h-[100vh] pb-32">
+    <header
+      class="sticky top-0 py-[33px] px-[48px] bg-white flex items-center justify-between z-[100] shadow-sm"
+    >
       <h1 class="font-bold text-[24px]">Table Heading</h1>
       <div class="flex gap-[16px]">
         <div
@@ -73,7 +75,7 @@ const status = [
         <a
           role="tab"
           class="tab pb-10 !px-5 !w-auto capitalize"
-          :class="{ '![--fallback-bc:#0CAF60]' : tab === item }"
+          :class="{ '![--fallback-bc:#0CAF60]': tab === item }"
           @click="tab = item"
           v-for="(item, index) in tabs"
           :key="index"
@@ -137,11 +139,11 @@ const status = [
         </button>
       </div>
       <div class="">
-        <div class="py-5">
-          <div class="w-full px-[30px] pb-5 border-b">
-            <div class="flex items-center gap-[10px]">
+        <div class="">
+          <template v-if="showFilters">
+            <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px]">
               <div class="flex items-center gap-[20px] w-1/4">
-                <h3 class="!font-bold !text-black text-[16px]">Name</h3>
+                <h3 class="!font-bold !text-black text-[16px] ml-10">Name</h3>
               </div>
               <div class="w-1/4">
                 <h3 class="!font-bold !text-black text-[16px]">Amount</h3>
@@ -153,26 +155,44 @@ const status = [
                 <h3 class="!font-bold !text-black text-[16px]">Payment Status</h3>
               </div>
             </div>
+            <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px]">
+              <div class="w-1/4 pl-10">
+                <AppInput type="text" placeholder="Name" class="w-full" />
+              </div>
+              <div class="w-1/4">
+                <AppInput type="number" placeholder="Amount" />
+              </div>
+              <div class="w-1/4">
+                <AppSelect v-model="filter.userStatus" class="w-full" :options="status" />
+              </div>
+              <div class="w-1/4">
+                <AppSelect v-model="filter.paymentStatus" class="w-full" :options="paymentStatus" />
+              </div>
+            </div>
+          </template>
+          <div class="px-[30px] py-5 border-b flex items-center gap-[16px] text-slate">
+            <div class="w-1/4">
+              <h3 class="ml-10">Name</h3>
+            </div>
+            <div class="w-1/4">
+              <h3 class="">User Status</h3>
+            </div>
+            <div class="w-1/4">
+              <h3 class="">Payment Status</h3>
+            </div>
+            <div class="w-1/4">
+              <h3 class="">Amount</h3>
+            </div>
           </div>
-          <div class="px-[30px] py-5 border-b flex items-center gap-[10px]" v-if="showFilters">
-            <div class="w-1/4">
-              <AppInput type="text" placeholder="Name" />
-            </div>
-            <div class="w-1/4">
-              <AppInput type="number" placeholder="Amount" />
-            </div>
-            <div class="w-1/4">
-              <AppSelect v-model="filter.userStatus" class="w-full" :options="status" />
-            </div>
-            <div class="w-1/4">
-              <AppSelect v-model="filter.paymentStatus" class="w-full" :options="paymentStatus" />
-            </div>
-          </div>
-          <div class="px-[30px] py-5 border-b flex items-center gap-[10px]">
-            <div class="w-1/4">
+          <div class="px-[30px] py-5 border-b flex items-center gap-[16px]">
+            <div class="w-1/4 flex items-center justify-start gap-[12px]">
               <label>
                 <input type="checkbox" class="checkbox rounded-full [--chkbg:#0CAF60]" />
               </label>
+              <div class="">
+                <h3 class="font-[600] capitalize"></h3>
+                <p class="font-[500]"></p>
+              </div>
             </div>
             <div class="w-1/4"></div>
             <div class="w-1/4"></div>
