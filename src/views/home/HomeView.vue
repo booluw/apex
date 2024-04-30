@@ -16,6 +16,7 @@ const loading = ref(false)
 const error = ref(false)
 
 const showFilters = ref(false)
+const hasFilter = ref(false)
 const tab = ref<Tab | string>('all')
 const tabs = ['all', 'paid', 'unpaid', 'overdue']
 
@@ -23,7 +24,9 @@ const selected = ref<number[]>([])
 
 const filter = reactive({
   userStatus: '',
-  paymentStatus: ''
+  paymentStatus: '',
+  amount: '',
+  name: ''
 })
 
 const paymentStatus = [
@@ -86,6 +89,7 @@ const addToSelected = function (id: number) {
 
 const fetchTransaction = async function () {
   loading.value = true
+
   try {
     const response = (await getTransactions(
       transactions.page,
@@ -101,6 +105,16 @@ const fetchTransaction = async function () {
   }
 
   loading.value = false
+}
+
+const clearFilter = async function () {
+  hasFilter.value = false
+  filter.name = ''
+  filter.paymentStatus = ''
+  filter.amount = ''
+  filter.userStatus = ''
+
+  await fetchTransaction()
 }
 
 const payDues = async function () {
@@ -121,6 +135,52 @@ const payDues = async function () {
   loading.value = false
 }
 
+const filterTransactions = function () {
+  hasFilter.value = false
+
+  if (filter.name !== '') {
+    hasFilter.value = true
+    transactions.items = transactions.items.filter((item: any) => {
+      if (item.user.name === filter.name) return item
+    });
+  }
+
+  if (filter.amount !== '') {
+    hasFilter.value = true
+    transactions.items = transactions.items.filter((item: any) => {
+      if (item.amount === filter.amount) return item
+    });
+  }
+
+  if (filter.userStatus !== '') {
+    hasFilter.value = true
+    transactions.items = transactions.items.filter((item: any) => {
+      if (item.user.status === filter.userStatus) return item
+    });
+  }
+
+  if (filter.paymentStatus !== '') {
+    hasFilter.value = true
+
+    switch (filter.paymentStatus) {
+      case 'paid':
+        transactions.items = transactions.items.filter((item: any) => { if(item.payment_made_at !== null) return item });
+        break;
+
+      case 'overdue':
+        transactions.items = transactions.items.filter((item: any) => { if(dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null) return item });
+        break;
+
+      case 'unpaid':
+        transactions.items = transactions.items.filter((item: any) => { if(!dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null) return item });
+        break;
+    
+      default:
+        break;
+    }
+  }
+}
+
 onMounted(async () => {
   await fetchTransaction()
 })
@@ -128,6 +188,10 @@ onMounted(async () => {
 watch(tab, async () => {
   await fetchTransaction()
 })
+
+watch(filter, () => {
+  filterTransactions()
+}, { deep: true })
 </script>
 
 <template>
@@ -172,7 +236,14 @@ watch(tab, async () => {
       </button>
     </div>
     <div class="bg-white rounded-[16px] mx-[48px] overflow-hidden">
-      <div class="px-[30px] py-[24px] border-b flex justify-end items-center">
+      <div class="px-[30px] py-[24px] border-b flex gap-[16px] justify-end items-center">
+        <button
+          class="btn bg-grey/50 border-grey rounded-[12px] p-[16px] h-auto flex items-center text-primary hover:bg-white"
+          v-if="hasFilter"
+          @click="clearFilter()"
+        >
+          Clear FIlter
+        </button>
         <button
           class="btn bg-grey/50 border-grey rounded-[12px] p-[16px] h-auto flex items-center text-primary hover:bg-white"
           :class="{ '!bg-white': showFilters }"
@@ -240,10 +311,10 @@ watch(tab, async () => {
             </div>
             <div class="w-full px-[30px] py-5 border-b flex items-center gap-[16px]">
               <div class="w-1/4 pl-10">
-                <AppInput type="text" placeholder="Name" class="w-full" />
+                <AppInput v-model="filter.name" type="text" placeholder="Name" class="w-full" />
               </div>
               <div class="w-1/4">
-                <AppInput type="number" placeholder="Amount" />
+                <AppInput v-model="filter.amount" type="number" placeholder="Amount" />
               </div>
               <div class="w-1/4">
                 <AppSelect v-model="filter.userStatus" class="w-full" :options="status" />
@@ -279,30 +350,30 @@ watch(tab, async () => {
                 :key="index"
               >
                 <div class="w-1/4 flex items-center justify-start gap-[12px] overflow-hidden">
-                  <div class="p-1 rounded-full border cursor-pointer" @click="addToSelected(item.id)">
-                    <div class="p-2 rounded-full" :class="selected.includes(item.id) ? 'bg-primary' : ''" />
+                  <div class="p-1 rounded-full border cursor-pointer" @click="addToSelected(item?.id)">
+                    <div class="p-2 rounded-full" :class="selected.includes(item?.id) ? 'bg-primary' : ''" />
                   </div>
                   <div class="">
-                    <h3 class="font-[600] capitalize">{{ item.user?.name }}</h3>
-                    <p class="text-[#88888A]">{{ item.user?.email }}</p>
+                    <h3 class="font-[600] capitalize">{{ item?.user?.name }}</h3>
+                    <p class="text-[#88888A]">{{ item?.user?.email }}</p>
                   </div>
                 </div>
                 <div class="w-1/4 overflow-hidden">
                   <div
                     class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
                     :class="
-                      item.user.status === 'active'
+                      item?.user?.status === 'active'
                         ? 'bg-primary text-primary'
                         : 'bg-[#FE964A] text-[#FE964A]'
                     "
                   >
                     <span
                       class="p-1 rounded-full"
-                      :class="item.user.status === 'active' ? 'bg-primary' : 'bg-[#FE964A]'"
+                      :class="item?.user?.status === 'active' ? 'bg-primary' : 'bg-[#FE964A]'"
                     />
-                    {{ item.user.status }}
+                    {{ item?.user?.status }}
                   </div>
-                  <p class="text-[#383A47]">Last Login: {{ formatDate(item.user.last_login_at) }}</p>
+                  <p class="text-[#383A47]">Last Login: {{ formatDate(item?.user?.last_login_at) }}</p>
                 </div>
                 <div class="w-1/4 overflow-hidden">
                   <div
