@@ -75,6 +75,60 @@ const transactions = reactive({
   per_page: 20
 })
 
+
+const filteredTransactions = computed(() => {
+  hasFilter.value = false
+
+  if (filter.name !== '') {
+    hasFilter.value = true
+    return transactions.items.filter((item: any) => {
+      if (item.user.name === filter.name) return item
+    })
+  }
+
+  if (filter.amount !== '') {
+    hasFilter.value = true
+    return transactions.items.filter((item: any) => {
+      if (item.amount === filter.amount) return item
+    })
+  }
+
+  if (filter.userStatus !== '') {
+    hasFilter.value = true
+    return transactions.items.filter((item: any) => {
+      if (item.user.status === filter.userStatus) return item
+    })
+  }
+
+  if (filter.paymentStatus !== '') {
+    hasFilter.value = true
+
+    switch (filter.paymentStatus) {
+      case 'paid':
+        return transactions.items.filter((item: any) => {
+          if (item.payment_made_at !== null) return item
+        })
+
+      case 'overdue':
+        return transactions.items.filter((item: any) => {
+          if (dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null)
+            return item
+        })
+
+      case 'unpaid':
+        return transactions.items.filter((item: any) => {
+          if (!dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null)
+            return item
+        })
+
+      default:
+        break
+    }
+  }
+
+  return transactions.items
+})
+
 const addToSelected = function (id: number) {
   if (selected.value.includes(id)) {
     // remove from selected
@@ -133,58 +187,17 @@ const payDues = async function () {
   loading.value = false
 }
 
-const filteredTransactions = computed(() => {
-  hasFilter.value = false
-
-  if (filter.name !== '') {
-    hasFilter.value = true
-    return transactions.items.filter((item: any) => {
-      if (item.user.name === filter.name) return item
-    })
+const markAsPaid = async function (id: number) {
+  loading.value = true
+  try {
+    await makePayment({ payments: [id] })
+    await fetchTransaction()
+  } catch (err) {
+    error.value = true
+    console.log(err)
   }
-
-  if (filter.amount !== '') {
-    hasFilter.value = true
-    return transactions.items.filter((item: any) => {
-      if (item.amount === filter.amount) return item
-    })
-  }
-
-  if (filter.userStatus !== '') {
-    hasFilter.value = true
-    return transactions.items.filter((item: any) => {
-      if (item.user.status === filter.userStatus) return item
-    })
-  }
-
-  if (filter.paymentStatus !== '') {
-    hasFilter.value = true
-
-    switch (filter.paymentStatus) {
-      case 'paid':
-        return transactions.items.filter((item: any) => {
-          if (item.payment_made_at !== null) return item
-        })
-
-      case 'overdue':
-        return transactions.items.filter((item: any) => {
-          if (dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null)
-            return item
-        })
-
-      case 'unpaid':
-        return transactions.items.filter((item: any) => {
-          if (!dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null)
-            return item
-        })
-
-      default:
-        break
-    }
-  }
-
-  return transactions.items
-})
+  loading.value = false
+}
 
 onMounted(async () => {
   await fetchTransaction()
@@ -345,7 +358,7 @@ watch(tab, async () => {
             </div>
             <div class="w-[72px]"></div>
           </div>
-          <div class="h-[50vh] overflow-auto">
+          <div class="h-[50vh] overflow-auto overflow-x-hidden">
             <AppLoader v-if="loading" />
             <AppError v-else-if="error" />
             <template v-else>
@@ -439,7 +452,19 @@ watch(tab, async () => {
                     </h4>
                     <p class="text-[#88888A]">{{ item.currency }}</p>
                   </div>
-                  <div class="w-[72px]"></div>
+                  <div class="w-[72px]">
+                    <div class="dropdown dropdown-end">
+                      <svg tabindex="0" role="button" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 12.0009C11 12.5531 11.4477 13.0009 12 13.0009C12.5523 13.0009 13 12.5531 13 12.0009C13 11.4486 12.5523 11.0009 12 11.0009C11.4477 11.0009 11 11.4486 11 12.0009Z" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4 12.0009C4 12.5531 4.44772 13.0009 5 13.0009C5.55228 13.0009 6 12.5531 6 12.0009C6 11.4486 5.55228 11.0009 5 11.0009C4.44772 11.0009 4 11.4486 4 12.0009Z" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18 12.0009C18 12.5531 18.4477 13.0009 19 13.0009C19.5523 13.0009 20 12.5531 20 12.0009C20 11.4486 19.5523 11.0009 19 11.0009C18.4477 11.0009 18 11.4486 18 12.0009Z" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a @click.prevent="markAsPaid(item.id)">{{selected.includes(item?.id) ? 'Mark as Unpaid' : 'Mark as Paid'}}</a></li>
+                        <li><a>Another Action</a></li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </template>
               <div class="h-full flex items-center justify-center text-slate" v-else>
