@@ -1,7 +1,6 @@
+<!-- eslint-disable vue/no-side-effects-in-computed-properties -->
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
-
-
+import { onMounted, reactive, ref, watch, computed } from 'vue'
 import { getTransactions, makePayment } from './services/home'
 import { convertCurrency, formatDate, dateDifferenceFromNow } from './utils/helpers'
 
@@ -79,7 +78,7 @@ const transactions = reactive({
 const addToSelected = function (id: number) {
   if (selected.value.includes(id)) {
     // remove from selected
-    selected.value = selected.value.filter(item => {
+    selected.value = selected.value.filter((item) => {
       return item !== id
     })
   } else {
@@ -118,14 +117,13 @@ const clearFilter = async function () {
 }
 
 const payDues = async function () {
-
   if (selected.value.length === 0) {
-    return;
+    return
   }
 
   loading.value = true
   try {
-    await makePayment({ payments: selected.value });
+    await makePayment({ payments: selected.value })
     selected.value = []
     await fetchTransaction()
   } catch (err) {
@@ -135,28 +133,28 @@ const payDues = async function () {
   loading.value = false
 }
 
-const filterTransactions = function () {
+const filteredTransactions = computed(() => {
   hasFilter.value = false
 
   if (filter.name !== '') {
     hasFilter.value = true
-    transactions.items = transactions.items.filter((item: any) => {
+    return transactions.items.filter((item: any) => {
       if (item.user.name === filter.name) return item
-    });
+    })
   }
 
   if (filter.amount !== '') {
     hasFilter.value = true
-    transactions.items = transactions.items.filter((item: any) => {
+    return transactions.items.filter((item: any) => {
       if (item.amount === filter.amount) return item
-    });
+    })
   }
 
   if (filter.userStatus !== '') {
     hasFilter.value = true
-    transactions.items = transactions.items.filter((item: any) => {
+    return transactions.items.filter((item: any) => {
       if (item.user.status === filter.userStatus) return item
-    });
+    })
   }
 
   if (filter.paymentStatus !== '') {
@@ -164,22 +162,29 @@ const filterTransactions = function () {
 
     switch (filter.paymentStatus) {
       case 'paid':
-        transactions.items = transactions.items.filter((item: any) => { if(item.payment_made_at !== null) return item });
-        break;
+        return transactions.items.filter((item: any) => {
+          if (item.payment_made_at !== null) return item
+        })
 
       case 'overdue':
-        transactions.items = transactions.items.filter((item: any) => { if(dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null) return item });
-        break;
+        return transactions.items.filter((item: any) => {
+          if (dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null)
+            return item
+        })
 
       case 'unpaid':
-        transactions.items = transactions.items.filter((item: any) => { if(!dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null) return item });
-        break;
-    
+        return transactions.items.filter((item: any) => {
+          if (!dateDifferenceFromNow(item.payment_expected_at) && item.payment_made_at === null)
+            return item
+        })
+
       default:
-        break;
+        break
     }
   }
-}
+
+  return transactions.items
+})
 
 onMounted(async () => {
   await fetchTransaction()
@@ -188,10 +193,6 @@ onMounted(async () => {
 watch(tab, async () => {
   await fetchTransaction()
 })
-
-watch(filter, () => {
-  filterTransactions()
-}, { deep: true })
 </script>
 
 <template>
@@ -228,8 +229,12 @@ watch(filter, () => {
       </div>
       <button
         class="btn bg-primary text-white px-[20px] py-[8px] w-[254px] hover:bg-primary/75"
-        :class="{ '!cursor-not-allowed !bg-opacity-60' : selected.length === 0 }"
-        :title="selected.length === 0 ? 'Please select transaction first' : 'Click to mark selected transactions as paid'"
+        :class="{ '!cursor-not-allowed !bg-opacity-60': selected.length === 0 }"
+        :title="
+          selected.length === 0
+            ? 'Please select transaction first'
+            : 'Click to mark selected transactions as paid'
+        "
         @click="payDues()"
       >
         Pay Dues
@@ -344,86 +349,101 @@ watch(filter, () => {
             <AppLoader v-if="loading" />
             <AppError v-else-if="error" />
             <template v-else>
-              <div
-                class="px-[30px] py-5 border-b flex items-center gap-[16px]"
-                v-for="(item, index) in transactions.items"
-                :key="index"
-              >
-                <div class="w-1/4 flex items-center justify-start gap-[12px] overflow-hidden">
-                  <div class="p-1 rounded-full border cursor-pointer" @click="addToSelected(item?.id)">
-                    <div class="p-2 rounded-full" :class="selected.includes(item?.id) ? 'bg-primary' : ''" />
+              <template v-if="filteredTransactions.length !== 0">
+                <div
+                  class="px-[30px] py-5 border-b flex items-center gap-[16px]"
+                  v-for="(item, index) in filteredTransactions"
+                  :key="index"
+                >
+                  <div class="w-1/4 flex items-center justify-start gap-[12px] overflow-hidden">
+                    <div
+                      class="p-1 rounded-full border cursor-pointer"
+                      @click="addToSelected(item?.id)"
+                    >
+                      <div
+                        class="p-2 rounded-full"
+                        :class="selected.includes(item?.id) ? 'bg-primary' : ''"
+                      />
+                    </div>
+                    <div class="">
+                      <h3 class="font-[600] capitalize">{{ item?.user?.name }}</h3>
+                      <p class="text-[#88888A]">{{ item?.user?.email }}</p>
+                    </div>
                   </div>
-                  <div class="">
-                    <h3 class="font-[600] capitalize">{{ item?.user?.name }}</h3>
-                    <p class="text-[#88888A]">{{ item?.user?.email }}</p>
+                  <div class="w-1/4 overflow-hidden">
+                    <div
+                      class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
+                      :class="
+                        item?.user?.status === 'active'
+                          ? 'bg-primary text-primary'
+                          : 'bg-[#FE964A] text-[#FE964A]'
+                      "
+                    >
+                      <span
+                        class="p-1 rounded-full"
+                        :class="item?.user?.status === 'active' ? 'bg-primary' : 'bg-[#FE964A]'"
+                      />
+                      {{ item?.user?.status }}
+                    </div>
+                    <p class="text-[#383A47]">
+                      Last Login: {{ formatDate(item?.user?.last_login_at) }}
+                    </p>
                   </div>
-                </div>
-                <div class="w-1/4 overflow-hidden">
-                  <div
-                    class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
-                    :class="
-                      item?.user?.status === 'active'
-                        ? 'bg-primary text-primary'
-                        : 'bg-[#FE964A] text-[#FE964A]'
-                    "
-                  >
-                    <span
-                      class="p-1 rounded-full"
-                      :class="item?.user?.status === 'active' ? 'bg-primary' : 'bg-[#FE964A]'"
-                    />
-                    {{ item?.user?.status }}
-                  </div>
-                  <p class="text-[#383A47]">Last Login: {{ formatDate(item?.user?.last_login_at) }}</p>
-                </div>
-                <div class="w-1/4 overflow-hidden">
-                  <div
-                    class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
-                    :class="
-                      item.payment_made_at
-                        ? 'bg-[#8C62FF] text-[#8C62FF]'
-                        : dateDifferenceFromNow(item.payment_expected_at)
-                          ? 'bg-[#FD6A6A] text-[#FD6A6A]'
-                          : 'bg-[#D4A701] text-[#D4A701]'
-                    "
-                  >
-                    <span
-                      class="p-1 rounded-full"
+                  <div class="w-1/4 overflow-hidden">
+                    <div
+                      class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
                       :class="
                         item.payment_made_at
-                          ? 'bg-[#8C62FF]'
+                          ? 'bg-[#8C62FF] text-[#8C62FF]'
                           : dateDifferenceFromNow(item.payment_expected_at)
-                            ? 'bg-[#FD6A6A]'
-                            : 'bg-[#D4A701]'
+                            ? 'bg-[#FD6A6A] text-[#FD6A6A]'
+                            : 'bg-[#D4A701] text-[#D4A701]'
                       "
-                    />
-                    {{
-                      item.payment_made_at
-                        ? 'Paid'
-                        : dateDifferenceFromNow(item.payment_expected_at)
-                          ? 'Overdue'
-                          : 'Unpaid'
-                    }}
+                    >
+                      <span
+                        class="p-1 rounded-full"
+                        :class="
+                          item.payment_made_at
+                            ? 'bg-[#8C62FF]'
+                            : dateDifferenceFromNow(item.payment_expected_at)
+                              ? 'bg-[#FD6A6A]'
+                              : 'bg-[#D4A701]'
+                        "
+                      />
+                      {{
+                        item.payment_made_at
+                          ? 'Paid'
+                          : dateDifferenceFromNow(item.payment_expected_at)
+                            ? 'Overdue'
+                            : 'Unpaid'
+                      }}
+                    </div>
+                    <p class="text-[#383A47]">
+                      {{
+                        item.payment_made_at
+                          ? 'Paid on'
+                          : dateDifferenceFromNow(item.payment_expected_at)
+                            ? 'Dued on'
+                            : 'Dues on'
+                      }}:
+                      {{
+                        item.payment_made_at
+                          ? formatDate(item.payment_made_at)
+                          : formatDate(item.payment_expected_at)
+                      }}
+                    </p>
                   </div>
-                  <p class="text-[#383A47]">
-                    {{
-                      item.payment_made_at
-                        ? 'Paid on'
-                        : dateDifferenceFromNow(item.payment_expected_at)
-                          ? 'Dued on'
-                          : 'Dues on'
-                    }}:
-                    {{
-                      item.payment_made_at
-                        ? formatDate(item.payment_made_at)
-                        : formatDate(item.payment_expected_at)
-                    }}
-                  </p>
+                  <div class="w-1/4 overflow-hidden">
+                    <h4 class="font-[600]">
+                      {{ convertCurrency(item.currency) }}{{ item.amount }}
+                    </h4>
+                    <p class="text-[#88888A]">{{ item.currency }}</p>
+                  </div>
+                  <div class="w-[72px]"></div>
                 </div>
-                <div class="w-1/4 overflow-hidden">
-                  <h4 class="font-[600]">{{ convertCurrency(item.currency) }}{{ item.amount }}</h4>
-                  <p class="text-[#88888A]">{{ item.currency }}</p>
-                </div>
-                <div class="w-[72px]"></div>
+              </template>
+              <div class="h-full flex items-center justify-center text-slate" v-else>
+                Nothing to see here, redefine your filter parameters
               </div>
             </template>
           </div>
