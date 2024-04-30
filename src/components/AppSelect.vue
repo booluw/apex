@@ -17,7 +17,7 @@ const changeValue = function (val: string) {
 <template>
   <div class="!z-[90] relative cursor-pointer">
     <div
-      class="p-[16px] rounded-[12px] bg-grey border border-transparent flex justify-between items-center font-normal capitalize"
+      class="p-[16px] rounded-[12px] bg-grey border border-transparent flex justify-between items-center font-normal capitalize text-black"
       :class="{ '!border-slate/40': showMenu }"
       @click="showMenu = !showMenu"
     >
