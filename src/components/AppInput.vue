@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const props = defineProps<{
+defineProps<{
   placeholder?: string
   type: 'text' | 'search' | 'number' | any
 }>()

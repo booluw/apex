@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 
-const props = defineProps<{
+defineProps<{
   placeholder?: string
   options: any[]
 }>()
@@ -41,23 +41,35 @@ const changeValue = function (val: string) {
       </svg>
     </div>
     <div
-      class="absolute bg-white right-0 left-0 mt-2 p-2 z-[90] rounded-[16px] shadow-md"
+      class="absolute bg-white right-0 left-0 mt-2 p-2 z-[90] rounded-[16px] shadow-md max-h-[150px] overflow-auto"
       v-if="showMenu"
     >
-      <div
-        class="p-[16px] rounded-[16px] hover:bg-grey flex items-center gap-[6px]"
-        :style="`color: ${item.status}`"
-        v-for="(item, index) in options"
-        :key="index"
-        @click="changeValue(item.value)"
-      >
+      <template v-if="typeof options[0] === 'object'">
         <div
-          class="p-1 rounded-full"
-          :style="`background-color: ${item.status}`"
-          v-if="item.status"
-        />
-        {{ item.label ?? item.value }}
-      </div>
+          class="p-[16px] rounded-[16px] hover:bg-grey flex items-center gap-[6px]"
+          :style="`color: ${item.status}`"
+          v-for="(item, index) in options"
+          :key="index"
+          @click="changeValue(item.value)"
+        >
+          <div
+            class="p-1 rounded-full"
+            :style="`background-color: ${item.status}`"
+            v-if="item.status"
+          />
+          {{ item.label || item.value }}
+        </div>
+      </template>
+      <template v-else>
+        <div
+          class="p-[10px] rounded-[10px] hover:bg-grey flex items-center gap-[6px]"
+          v-for="(item, index) in options"
+          :key="index"
+          @click="changeValue(item)"
+        >
+          {{ item }}
+        </div>
+      </template>
     </div>
   </div>
 </template>

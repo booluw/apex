@@ -8,6 +8,7 @@ import AppSelect from '@/components/AppSelect.vue'
 import AppInput from '@/components/AppInput.vue'
 import AppLoader from '@/components/AppLoader.vue'
 import AppError from '@/components/AppError.vue'
+import AppPagination from '@/components/AppPagination.vue'
 
 type Tab = 'all' | 'paid' | 'unpaid' | 'overdue'
 
@@ -16,6 +17,7 @@ const error = ref(false)
 
 const showFilters = ref(false)
 const hasFilter = ref(false)
+
 const tab = ref<Tab | string>('all')
 const tabs = ['all', 'paid', 'unpaid', 'overdue']
 
@@ -72,9 +74,11 @@ const status = [
 const transactions = reactive({
   items: [] as any,
   page: 0,
-  per_page: 20
+  per_page: 20,
+  total: 0
 })
 
+const per_page = ref(transactions.per_page)
 
 const filteredTransactions = computed(() => {
   hasFilter.value = false
@@ -152,6 +156,7 @@ const fetchTransaction = async function () {
     transactions.items = response.data.data
     transactions.per_page = response.data.per_page
     transactions.page = response.data.current_page
+    transactions.total = response.data.total
   } catch (err: any) {
     error.value = true
     console.log(err)
@@ -166,8 +171,6 @@ const clearFilter = async function () {
   filter.paymentStatus = ''
   filter.amount = ''
   filter.userStatus = ''
-
-  await fetchTransaction()
 }
 
 const payDues = async function () {
@@ -199,11 +202,23 @@ const markAsPaid = async function (id: number) {
   loading.value = false
 }
 
+const fetchNext = async function (page: number) {
+  if (transactions.page === page) return
+  transactions.page = page
+  await fetchTransaction()
+}
+
 onMounted(async () => {
   await fetchTransaction()
 })
 
 watch(tab, async () => {
+  transactions.page = 1
+  await fetchTransaction()
+})
+
+watch(per_page, async () => {
+  transactions.per_page = per_page.value
   await fetchTransaction()
 })
 </script>
@@ -253,7 +268,7 @@ watch(tab, async () => {
         Pay Dues
       </button>
     </div>
-    <div class="bg-white rounded-[16px] mx-[48px] overflow-hidden">
+    <div class="bg-white rounded-[16px] mx-[48px]">
       <div class="px-[30px] py-[24px] border-b flex gap-[16px] justify-end items-center">
         <button
           class="btn bg-grey/50 border-grey rounded-[12px] p-[16px] h-auto flex items-center text-primary hover:bg-white"
@@ -454,13 +469,46 @@ watch(tab, async () => {
                   </div>
                   <div class="w-[72px]">
                     <div class="dropdown dropdown-end">
-                      <svg tabindex="0" role="button" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11 12.0009C11 12.5531 11.4477 13.0009 12 13.0009C12.5523 13.0009 13 12.5531 13 12.0009C13 11.4486 12.5523 11.0009 12 11.0009C11.4477 11.0009 11 11.4486 11 12.0009Z" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M4 12.0009C4 12.5531 4.44772 13.0009 5 13.0009C5.55228 13.0009 6 12.5531 6 12.0009C6 11.4486 5.55228 11.0009 5 11.0009C4.44772 11.0009 4 11.4486 4 12.0009Z" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M18 12.0009C18 12.5531 18.4477 13.0009 19 13.0009C19.5523 13.0009 20 12.5531 20 12.0009C20 11.4486 19.5523 11.0009 19 11.0009C18.4477 11.0009 18 11.4486 18 12.0009Z" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <svg
+                        tabindex="0"
+                        role="button"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M11 12.0009C11 12.5531 11.4477 13.0009 12 13.0009C12.5523 13.0009 13 12.5531 13 12.0009C13 11.4486 12.5523 11.0009 12 11.0009C11.4477 11.0009 11 11.4486 11 12.0009Z"
+                          stroke="#A0AEC0"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M4 12.0009C4 12.5531 4.44772 13.0009 5 13.0009C5.55228 13.0009 6 12.5531 6 12.0009C6 11.4486 5.55228 11.0009 5 11.0009C4.44772 11.0009 4 11.4486 4 12.0009Z"
+                          stroke="#A0AEC0"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M18 12.0009C18 12.5531 18.4477 13.0009 19 13.0009C19.5523 13.0009 20 12.5531 20 12.0009C20 11.4486 19.5523 11.0009 19 11.0009C18.4477 11.0009 18 11.4486 18 12.0009Z"
+                          stroke="#A0AEC0"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
                       </svg>
-                      <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                        <li><a @click.prevent="markAsPaid(item.id)">{{selected.includes(item?.id) ? 'Mark as Unpaid' : 'Mark as Paid'}}</a></li>
+                      <ul
+                        tabindex="0"
+                        class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+                      >
+                        <li>
+                          <a @click.prevent="markAsPaid(item.id)">{{
+                            item.payment_made_at ? 'Mark as Unpaid' : 'Mark as Paid'
+                          }}</a>
+                        </li>
                         <li><a>Another Action</a></li>
                       </ul>
                     </div>
@@ -474,7 +522,17 @@ watch(tab, async () => {
           </div>
         </div>
       </div>
-      <div class="px-[30px] py-[24px] border-b"></div>
+      <div class="px-[30px] py-[24px] flex justify-between items-center">
+        <div class="text-slate text-[14px] flex items-center gap-[16px]">
+          Show result: <AppSelect v-model="per_page" :options="[6, 10, 20, 50]" />
+        </div>
+        <AppPagination
+          :page="transactions.page"
+          :count="transactions.per_page"
+          :total="transactions.total"
+          @next="fetchNext"
+        />
+      </div>
     </div>
   </section>
 </template>
