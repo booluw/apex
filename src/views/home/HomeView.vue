@@ -268,7 +268,7 @@ watch(per_page, async () => {
         Pay Dues
       </button>
     </div>
-    <div class="bg-white rounded-[16px] mx-[48px] overflow-auto md:overflow-hidden">
+    <div class="bg-white rounded-[16px] mx-[48px]">
       <div class="px-[30px] py-[24px] border-b flex gap-[16px] justify-end items-center">
         <button
           class="btn bg-grey/50 border-grey rounded-[12px] p-[16px] h-auto flex items-center text-primary hover:bg-white"
