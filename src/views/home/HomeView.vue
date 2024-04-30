@@ -1,16 +1,31 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
+
+
+import { getTransactions, makePayment } from './services/home'
+import { convertCurrency, formatDate, dateDifferenceFromNow } from './utils/helpers'
 
 import AppSelect from '@/components/AppSelect.vue'
 import AppInput from '@/components/AppInput.vue'
+import AppLoader from '@/components/AppLoader.vue'
+import AppError from '@/components/AppError.vue'
+
+type Tab = 'all' | 'paid' | 'unpaid' | 'overdue'
+
+const loading = ref(false)
+const error = ref(false)
 
 const showFilters = ref(false)
-const tab = ref('all')
+const tab = ref<Tab | string>('all')
 const tabs = ['all', 'paid', 'unpaid', 'overdue']
+
+const selected = ref<number[]>([])
+
 const filter = reactive({
   userStatus: '',
   paymentStatus: ''
 })
+
 const paymentStatus = [
   {
     value: 'all',
@@ -33,6 +48,7 @@ const paymentStatus = [
     status: '#FD6A6A'
   }
 ]
+
 const status = [
   {
     value: 'all',
@@ -50,6 +66,68 @@ const status = [
     status: '#D4A701'
   }
 ]
+
+const transactions = reactive({
+  items: [] as any,
+  page: 0,
+  per_page: 20
+})
+
+const addToSelected = function (id: number) {
+  if (selected.value.includes(id)) {
+    // remove from selected
+    selected.value = selected.value.filter(item => {
+      return item !== id
+    })
+  } else {
+    selected.value.push(id)
+  }
+}
+
+const fetchTransaction = async function () {
+  loading.value = true
+  try {
+    const response = (await getTransactions(
+      transactions.page,
+      transactions.per_page,
+      tab.value
+    )) as any
+    transactions.items = response.data.data
+    transactions.per_page = response.data.per_page
+    transactions.page = response.data.current_page
+  } catch (err: any) {
+    error.value = true
+    console.log(err)
+  }
+
+  loading.value = false
+}
+
+const payDues = async function () {
+
+  if (selected.value.length === 0) {
+    return;
+  }
+
+  loading.value = true
+  try {
+    await makePayment({ payments: selected.value });
+    selected.value = []
+    await fetchTransaction()
+  } catch (err) {
+    error.value = true
+    console.log(err)
+  }
+  loading.value = false
+}
+
+onMounted(async () => {
+  await fetchTransaction()
+})
+
+watch(tab, async () => {
+  await fetchTransaction()
+})
 </script>
 
 <template>
@@ -84,7 +162,12 @@ const status = [
         </a>
         <b role="tab" class="tab w-[300px]"></b>
       </div>
-      <button class="btn bg-primary text-white px-[20px] py-[8px] w-[254px] hover:bg-primary/75">
+      <button
+        class="btn bg-primary text-white px-[20px] py-[8px] w-[254px] hover:bg-primary/75"
+        :class="{ '!cursor-not-allowed !bg-opacity-60' : selected.length === 0 }"
+        :title="selected.length === 0 ? 'Please select transaction first' : 'Click to mark selected transactions as paid'"
+        @click="payDues()"
+      >
         Pay Dues
       </button>
     </div>
@@ -168,6 +251,7 @@ const status = [
               <div class="w-1/4">
                 <AppSelect v-model="filter.paymentStatus" class="w-full" :options="paymentStatus" />
               </div>
+              <div class="w-[72px]"></div>
             </div>
           </template>
           <div class="px-[30px] py-5 border-b flex items-center gap-[16px] text-slate">
@@ -183,20 +267,94 @@ const status = [
             <div class="w-1/4">
               <h3 class="">Amount</h3>
             </div>
+            <div class="w-[72px]"></div>
           </div>
-          <div class="px-[30px] py-5 border-b flex items-center gap-[16px]">
-            <div class="w-1/4 flex items-center justify-start gap-[12px]">
-              <label>
-                <input type="checkbox" class="checkbox rounded-full [--chkbg:#0CAF60]" />
-              </label>
-              <div class="">
-                <h3 class="font-[600] capitalize"></h3>
-                <p class="font-[500]"></p>
+          <div class="h-[50vh] overflow-auto">
+            <AppLoader v-if="loading" />
+            <AppError v-else-if="error" />
+            <template v-else>
+              <div
+                class="px-[30px] py-5 border-b flex items-center gap-[16px]"
+                v-for="(item, index) in transactions.items"
+                :key="index"
+              >
+                <div class="w-1/4 flex items-center justify-start gap-[12px] overflow-hidden">
+                  <div class="p-1 rounded-full border cursor-pointer" @click="addToSelected(item.id)">
+                    <div class="p-2 rounded-full" :class="selected.includes(item.id) ? 'bg-primary' : ''" />
+                  </div>
+                  <div class="">
+                    <h3 class="font-[600] capitalize">{{ item.user?.name }}</h3>
+                    <p class="text-[#88888A]">{{ item.user?.email }}</p>
+                  </div>
+                </div>
+                <div class="w-1/4 overflow-hidden">
+                  <div
+                    class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
+                    :class="
+                      item.user.status === 'active'
+                        ? 'bg-primary text-primary'
+                        : 'bg-[#FE964A] text-[#FE964A]'
+                    "
+                  >
+                    <span
+                      class="p-1 rounded-full"
+                      :class="item.user.status === 'active' ? 'bg-primary' : 'bg-[#FE964A]'"
+                    />
+                    {{ item.user.status }}
+                  </div>
+                  <p class="text-[#383A47]">Last Login: {{ formatDate(item.user.last_login_at) }}</p>
+                </div>
+                <div class="w-1/4 overflow-hidden">
+                  <div
+                    class="inline-flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px] bg-opacity-10 capitalize"
+                    :class="
+                      item.payment_made_at
+                        ? 'bg-[#8C62FF] text-[#8C62FF]'
+                        : dateDifferenceFromNow(item.payment_expected_at)
+                          ? 'bg-[#FD6A6A] text-[#FD6A6A]'
+                          : 'bg-[#D4A701] text-[#D4A701]'
+                    "
+                  >
+                    <span
+                      class="p-1 rounded-full"
+                      :class="
+                        item.payment_made_at
+                          ? 'bg-[#8C62FF]'
+                          : dateDifferenceFromNow(item.payment_expected_at)
+                            ? 'bg-[#FD6A6A]'
+                            : 'bg-[#D4A701]'
+                      "
+                    />
+                    {{
+                      item.payment_made_at
+                        ? 'Paid'
+                        : dateDifferenceFromNow(item.payment_expected_at)
+                          ? 'Overdue'
+                          : 'Unpaid'
+                    }}
+                  </div>
+                  <p class="text-[#383A47]">
+                    {{
+                      item.payment_made_at
+                        ? 'Paid on'
+                        : dateDifferenceFromNow(item.payment_expected_at)
+                          ? 'Dued on'
+                          : 'Dues on'
+                    }}:
+                    {{
+                      item.payment_made_at
+                        ? formatDate(item.payment_made_at)
+                        : formatDate(item.payment_expected_at)
+                    }}
+                  </p>
+                </div>
+                <div class="w-1/4 overflow-hidden">
+                  <h4 class="font-[600]">{{ convertCurrency(item.currency) }}{{ item.amount }}</h4>
+                  <p class="text-[#88888A]">{{ item.currency }}</p>
+                </div>
+                <div class="w-[72px]"></div>
               </div>
-            </div>
-            <div class="w-1/4"></div>
-            <div class="w-1/4"></div>
-            <div class="w-1/4"></div>
+            </template>
           </div>
         </div>
       </div>
